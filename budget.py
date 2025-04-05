@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 import pandas as pd
+from datetime import datetime
 
 try:
     df = pd.read_csv('./records.csv')
@@ -73,6 +74,10 @@ class BudgetTrackerApp:
             "Expense": monthly_expense
         }).fillna(0)
         
+        #Convert columns to numeric ones
+        summary_df['Income'] = pd.to_numeric(summary_df['Income'], errors='coerce')
+        summary_df['Expense'] = pd.to_numeric(summary_df['Expense'], errors='coerce')
+        
         summary_df['Savings'] = summary_df['Income'] - summary_df['Expense']
         
         text.insert(tk.END, summary_df.to_string())
@@ -112,10 +117,22 @@ class BudgetTrackerApp:
         amount = self.entry_amount.get()
         entry_type = self.entry_type.get()
         
+        #Validate and reformat date
+        try:
+            amount = float(self.entry_amount.get())
+            date = self.entry_date.get()
+            formatted_date = datetime.strptime(date, "%y-%m-%d").strftime("%y-%-m-%-d")
+        except ValueError:
+            if "could not convert string to float" in str(e):
+                messagebox.showerror("Error", "Amount must be a valid number.")
+            else:
+                messagebox.showerror("Error", "Invalid date format. Use YY-MM-DD.")
+            return
+        
         # insert new data into db if not missing 
-        if date and description and amount and entry_type:
+        if formatted_date and description and amount and entry_type:
             new_entry = pd.DataFrame({
-                "Date": [date],
+                "Date": [formatted_date],
                 "Description": [description],
                 "Amount": [amount],
                 "Type": [entry_type]
@@ -179,10 +196,26 @@ class BudgetTrackerApp:
         
     def save_edit(self, index):
         global df
-        df.at[index, 'Date'] = self.edit_date.get()
-        df.at[index, 'Description'] = self.edit_description.get()
-        df.at[index, 'Amount'] = self.edit_amount.get()
-        df.at[index, 'Type'] = self.edit_type.get()
+        
+        # Get updated values from input fields
+        date = self.edit_date.get()
+        description = self.edit_description.get()
+        amount = self.edit_amount.get()
+        entry_type = self.edit_type.get()
+        
+        # Validate and reformat the date
+        try:
+            formatted_date = datetime.strptime(date, "%y-%m-%d").strftime("%y-%-m-%-d")
+        except ValueError:
+            messagebox.showerror("Error", "Invalid date format, YY-MM-DD.")
+            return
+        
+        #Update DataFrame with new values
+        df.at[index, 'Date'] = formatted_date
+        df.at[index, 'Description'] = description
+        df.at[index, 'Amount'] = amount
+        df.at[index, 'Type'] = entry_type
+        
         df.to_csv('./records.csv', index=False)
         messagebox.showinfo("Success", "Entry updated successfully!")
         self.edit_top.destroy()
