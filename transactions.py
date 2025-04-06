@@ -1,10 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
-from tkinter import Canvas
 import pandas as pd
 from datetime import datetime
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 try:
     df = pd.read_csv('./records.csv')
@@ -18,7 +15,7 @@ except Exception as e:
     
     df = pd.DataFrame(data)
     
-class BudgetTrackerApp:
+class TransactionApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Budget Tracker")
@@ -238,8 +235,5 @@ class BudgetTrackerApp:
 
         
         
-root = tk.Tk()
-app = BudgetTrackerApp(root)
-root.mainloop()
-        
+
     
