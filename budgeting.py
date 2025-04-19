@@ -1,70 +1,121 @@
 import tkinter as tk
+from tkinter import ttk, messagebox
+import pandas as pd
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class BudgetingApp:
-    def __init__(self, root):
+    def __init__(self, root, username):
         self.root = root
-        self.root.title("Manage Budget")
-        self.root.geometry("400x600")
+        self.username = username
+        self.root.title("Budget Manager")
+        self.center_window(self.root, 800, 600)
         
-        self.categories = ['Bills & Utilities', 'Dining & Drinks', 'Groceries', 'Others']
-        self.spending = [51, 22, 15, 12]    # Percentages
-        self.amounts = [984, 687, 450, 300] # Dollar amounts
+        self.budgets = pd.DataFrame(columns=['username', 'period', 'category', 'budget', 'used'])
+        self.transactions = pd.read_csv('./transactions.csv')
+        self.load_budgets()
         
-        self.colors = ['#FF5733', '#33FF57', '#3357FF', '#FFC300']   # Pie chart colors
+        self.create_widgets()
+        self.update_chart()
         
-        self.create_title()
-        self.create_pie_chart()
-        #self.create_toggle_switch()
-        self.create_budget_summary()
+    def center_window(self, window, width, height):
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        x = int((screen_width / 2) - (width / 2))
+        y = int((screen_height / 2) - (height / 2))
+        window.geometry(f"{width}x{height}+{x}+{y}")
+
+    def load_budgets(self):
+        try:
+            self.budgets = pd.read_csv('./budgets.csv')
+        except FileNotFoundError:
+            pass
+
+    def create_widgets(self):
+        self.notebook = ttk.Notebook(self.root)
         
+        # Create Budget Tab
+        create_tab = ttk.Frame(self.notebook)
+        self.create_budget_ui(create_tab)
         
-    def create_title(self):
-        # Title at the top of the app
-        tk.Label(self.root, text="Manage Budget", font=("Arial", 18, "bold")).pack(pady=10)
+        # View Budget Tab
+        view_tab = ttk.Frame(self.notebook)
+        self.create_view_ui(view_tab)
         
-    def create_pie_chart(self):
-        fig = Figure(figsize=(4,4), dpi=100)
-        ax = fig.add_subplot(111)
+        self.notebook.add(create_tab, text="Create Budget")
+        self.notebook.add(view_tab, text="View Budget")
+        self.notebook.pack(expand=True, fill='both')
+
+    def create_budget_ui(self, parent):
+        ttk.Label(parent, text="Budget Period:").grid(row=0, column=0, padx=10, pady=5)
+        self.period_var = tk.StringVar()
+        ttk.Combobox(parent, textvariable=self.period_var, 
+                    values=["Month", "6 Months", "Year"]).grid(row=0, column=1, padx=10, pady=5)
+
+        ttk.Label(parent, text="Category:").grid(row=1, column=0, padx=10, pady=5)
+        self.category_entry = ttk.Entry(parent)
+        self.category_entry.grid(row=1, column=1, padx=10, pady=5)
+
+        ttk.Label(parent, text="Budget Amount:").grid(row=2, column=0, padx=10, pady=5)
+        self.amount_entry = ttk.Entry(parent)
+        self.amount_entry.grid(row=2, column=1, padx=10, pady=5)
+
+        ttk.Button(parent, text="Add Category", command=self.add_category).grid(row=3, columnspan=2, pady=10)
         
-        wedges, texts, autotexts = ax.pie(
-            self.spending,
-            labels=self.categories,
-            autopct='%1.1f%%',
-            startangle=90,
-            colors=self.colors 
-        )
+        self.category_list = tk.Listbox(parent)
+        self.category_list.grid(row=4, columnspan=2, padx=10, pady=5)
         
-        ax.set_title("Total spend in August: $3,121")
+        ttk.Button(parent, text="Save Budget", command=self.save_budget).grid(row=5, columnspan=2, pady=10)
+
+    def create_view_ui(self, parent):
+        self.figure = Figure(figsize=(6, 4))
+        self.canvas = FigureCanvasTkAgg(self.figure, parent)
+        self.canvas.get_tk_widget().pack(expand=True, fill='both')
+
+    def add_category(self):
+        category = self.category_entry.get()
+        amount = self.amount_entry.get()
+        if category and amount:
+            self.category_list.insert(tk.END, f"{category}: ${amount}")
+            self.category_entry.delete(0, tk.END)
+            self.amount_entry.delete(0, tk.END)
+
+    def save_budget(self):
+        period = self.period_var.get()
+        categories = []
         
-        chart_canvas = FigureCanvasTkAgg(fig, self.root)
-        chart_canvas.get_tk_widget().pack()
+        for item in self.category_list.get(0, tk.END):
+            category, amount = item.split(': $')
+            categories.append({
+                'username': self.username,
+                'period': period,
+                'category': category.strip(),
+                'budget': float(amount),
+                'used': 0.0
+            })
         
-    def toggle_include_bills(self):
-        print("Toggle switched")
+        new_budgets = pd.DataFrame(categories)
+        self.budgets = pd.concat([self.budgets, new_budgets])
+        self.budgets.to_csv('./budgets.csv', index=False)
+        messagebox.showinfo("Success", "Budget saved!")
+        self.update_chart()
+
+    def update_chart(self):
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
         
-    def create_toggle_switch(self):
-        toggle_frame = tk.Frame(self.root)
-        toggle_frame.pack(pady=10)
+        user_budgets = self.budgets[self.budgets['username'] == self.username]
+        user_transactions = self.transactions[self.transactions['username'] == self.username]
         
-        tk.Label(toggle_frame, text="Include bills").pack(side="left")
+        # Update used amounts from transactions
+        for index, budget in user_budgets.iterrows():
+            expenses = user_transactions[
+                (user_transactions['description'].str.contains(budget['category'], case=False)) &
+                (user_transactions['type'] == 'Expense')
+            ]['amount'].sum()
+            self.budgets.at[index, 'used'] = expenses
         
-        toggle_button = tk.Checkbutton(toggle_frame, command=self.toggle_include_bills)
-        toggle_button.pack(side="right")
-        
-    def create_budget_summary(self):
-        details = [
-            ("Bills & Utilities", "$984", "51% of spend"),
-            ("Dining & Drinks", "687", "22% of spend"),
-            ("Groceries", "$450", "15% of spend"),
-            ("Others", "$300", "12% of spend"),
-        ]
-        
-        for category, amount, percentage in details:
-            frame = tk.Frame(self.root)
-            frame.pack(fill="x", pady=5)
-            
-            tk.Label(frame, text=category, font=("Arial", 12)).pack(side="left")
-            tk.Label(frame, text=f"{percentage}", font=("Arial", 10), fg="gray").pack(side="left", padx=10)
-            tk.Label(frame, text=f"{amount}", font=("Arial", 12)).pack(side="right")
+        if not user_budgets.empty:
+            ax.pie(user_budgets['budget'], labels=user_budgets['category'], autopct='%1.1f%%')
+            ax.set_title(f"Budget Overview - {user_budgets.iloc[0]['period']}")
+            self.canvas.draw()
