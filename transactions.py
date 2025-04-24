@@ -4,6 +4,9 @@ from datetime import datetime
 import pandas as pd
 import tkinter as tk
 from tkinter import messagebox, ttk
+import customtkinter as ctk
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class TransactionApp:
     def __init__(self, root, username):
@@ -11,6 +14,7 @@ class TransactionApp:
         self.user = self.session.query(User).filter_by(username=username).first()
         self.root = root
         self.root.title("Transactions")
+        self.root.configure(fg_color='#0A2647')
         self.center_window(self.root, 400, 400)
         self.create_widgets()
     
@@ -62,21 +66,30 @@ class TransactionApp:
             summary.setdefault(month, {'Income': 0, 'Expense': 0})['Expense'] = amount
 
         # Display results
-        summary_window = tk.Toplevel(self.root)
+        summary_window = ctk.CTkToplevel(self.root)
         summary_window.title("Monthly Summary")
-        text = tk.Text(summary_window)
-        text.pack()
+
+        months = sorted(summary.keys())
+        income = [summary[m]['Income'] for m in months]
+        expenses = [summary[m]['Expense'] for m in months]
         
-        for month in sorted(summary.keys()):
-            income = summary[month]['Income']
-            expense = summary[month]['Expense']
-            savings = income - expense
-            text.insert(tk.END, 
-                f"Month {month}:\n"
-                f"Income: ${income:.2f}\n"
-                f"Expense: ${expense:.2f}\n"
-                f"Savings: ${savings:.2f}\n\n"
-            )
+        fig, ax = plt.subplots(figsize=(6,4))
+        width = 0.35
+        x = range(len(months))
+
+        ax.bar(x, income, width=width, label='Income', color='green')
+        ax.bar([i + width for i in x], expenses, width=width, label='Expense', color='red')
+
+        ax.set_xlabel('Month')
+        ax.set_ylabel('Amount')
+        ax.set_title('Monthly Summary')
+        ax.set_xticks([i + width/2 for i in x])
+        ax.set_xticklabels([str(int(m)) for m in months])
+        ax.legend()
+
+        canvas = FigureCanvasTkAgg(fig, master=summary_window)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=10)
 
         # Keep original center_window method
         def center_window(self, window, width, height):
@@ -89,44 +102,48 @@ class TransactionApp:
     # Keep original widget creation
     def create_widgets(self):
         fields = [
-            ("Date (YY-MM-DD):", 'date'),
-            ("Description:", 'description'),
-            ("Amount:", 'amount'),
-            ("Type (Income/Expense):", 'type')
+            ("Date:", 'date', 'YY-MM-DD'),
+            ("Description:", 'description', 'What is it?'),
+            ("Amount:", 'amount', '$'),
+            ("Type:", 'type', 'Income/Expense')
         ]
         
         self.entries = {}
-        for i, (label_text, field) in enumerate(fields):
-            tk.Label(self.root, text=label_text).grid(row=i, column=0, padx=5, pady=5)
-            entry = tk.Entry(self.root)
+        for i, (label_text, field, placeholder) in enumerate(fields):
+            ctk.CTkLabel(self.root, text=label_text).grid(row=i, column=0, padx=5, pady=5)
+            entry = ctk.CTkEntry(self.root, fg_color='white', 
+                text_color='black', border_color='white', placeholder_text=placeholder)
             entry.grid(row=i, column=1, padx=5, pady=5)
             self.entries[field] = entry
 
-        tk.Button(self.root, text="Add Entry", command=self.add_entry).grid(row=4, columnspan=2, pady=10)
-        tk.Button(self.root, text="View Entries", command=self.view_entries).grid(row=5, columnspan=2, pady=5)
-        tk.Button(self.root, text="Search Entries", command=self.search_entries).grid(row=6, columnspan=2, pady=5)
-        tk.Button(self.root, text="Monthly Summary", command=self.monthly_summary).grid(row=7, columnspan=2, pady=5)
+        ctk.CTkButton(self.root, text="Add Entry", command=self.add_entry, fg_color='green', hover_color='darkgreen').grid(row=4, columnspan=2, pady=10)
+        ctk.CTkButton(self.root, text="View Entries", command=self.view_entries, fg_color='#205295', hover_color='#144272').grid(row=5, columnspan=2, pady=5)
+        ctk.CTkButton(self.root, text="Search Entries", command=self.search_entries, fg_color='#205295', hover_color='#144272').grid(row=6, columnspan=2, pady=5)
+        ctk.CTkButton(self.root, text="Monthly Summary", command=self.monthly_summary, fg_color='#205295', hover_color='#144272').grid(row=7, columnspan=2, pady=5)
 
     # Keep original view_entries UI
     def view_entries(self):
-        view_window = tk.Toplevel(self.root)
+        view_window = ctk.CTkToplevel(self.root)
         view_window.title("View Entries")
+        view_window.configure(fg_color='#0A2647')
         text = tk.Text(view_window)
         text.pack()
         
         transactions = self.session.query(Transaction).filter_by(user=self.user).all()
         for transaction in transactions:
-            text.insert(tk.END,
+            text.insert(ctk.END,
                 f"Date: {transaction.date} | Description: {transaction.description} | "
                 f"Amount: {transaction.amount} | Type: {transaction.type}\n"
             )
 
     # Keep original search_entries UI
     def search_entries(self):
-        search_window = tk.Toplevel(self.root)
+        search_window = ctk.CTkToplevel(self.root)
         search_window.title("Search Entries")
-        tk.Label(search_window, text="Search term:").pack(padx=5, pady=5)
-        search_entry = tk.Entry(search_window)
+        search_window.configure(fg_color='#0A2647')
+        ctk.CTkLabel(search_window, text="Search term:").pack(padx=5, pady=5)
+        search_entry = ctk.CTkEntry(search_window, fg_color='white', 
+            text_color='black', border_color='white', placeholder_text='Entry')
         search_entry.pack(padx=5, pady=5)
         
         def perform_search():
@@ -137,7 +154,7 @@ class TransactionApp:
                 (Transaction.type.ilike(f"%{term}%"))
             ).all()
                 
-            result_window = tk.Toplevel(search_window)
+            result_window = ctk.CTkToplevel(search_window)
             result_window.title("Search Results")
             text = tk.Text(result_window)
             text.pack()
@@ -148,4 +165,4 @@ class TransactionApp:
                     f"Amount: {transaction.amount} | Type: {transaction.type}\n"
                 )
             
-        tk.Button(search_window, text="Search", command=perform_search).pack(pady=5)
+        ctk.CTkButton(search_window, text="Search", command=perform_search).pack(pady=5)

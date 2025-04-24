@@ -1,6 +1,7 @@
 from models import Budget, Session, User
 import tkinter as tk
 from tkinter import ttk, messagebox
+import customtkinter as ctk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -87,24 +88,24 @@ class BudgetingApp:
 
     # Keep original budget UI components
     def create_budget_ui(self, parent):
-        ttk.Label(parent, text="Budget Period:").grid(row=0, column=0, padx=10, pady=5)
-        self.period_var = tk.StringVar()
+        ctk.CTkLabel(parent, text="Budget Period:").grid(row=0, column=0, padx=10, pady=5)
+        self.period_var = ctk.StringVar()
         ttk.Combobox(parent, textvariable=self.period_var,
                     values=["Month", "6 Months", "Year"]).grid(row=0, column=1, padx=10, pady=5)
         
-        ttk.Label(parent, text="Category:").grid(row=1, column=0, padx=10, pady=5)
-        self.category_entry = ttk.Entry(parent)
+        ctk.CTkLabel(parent, text="Category:").grid(row=1, column=0, padx=10, pady=5)
+        self.category_entry = ctk.CTkEntry(parent)
         self.category_entry.grid(row=1, column=1, padx=10, pady=5)
         
-        ttk.Label(parent, text="Budget Amount:").grid(row=2, column=0, padx=10, pady=5)
-        self.amount_entry = ttk.Entry(parent)
+        ctk.CTkLabel(parent, text="Budget Amount:").grid(row=2, column=0, padx=10, pady=5)
+        self.amount_entry = ctk.CTkEntry(parent)
         self.amount_entry.grid(row=2, column=1, padx=10, pady=5)
         
-        ttk.Button(parent, text="Add Category", command=self.add_category).grid(row=3, columnspan=2, pady=10)
+        ctk.CTkButton(parent, text="Add Category", command=self.add_category).grid(row=3, columnspan=2, pady=10)
         self.category_list = tk.Listbox(parent)
         self.category_list.grid(row=4, columnspan=2, padx=10, pady=5)
         
-        ttk.Button(parent, text="Save Budget", command=self.save_budget).grid(row=5, columnspan=2, pady=10)
+        ctk.CTkButton(parent, text="Save Budget", command=self.save_budget).grid(row=5, columnspan=2, pady=10)
 
     # Keep original chart UI components
     def create_view_ui(self, parent):

@@ -1,4 +1,5 @@
 import tkinter as tk
+import customtkinter as ctk
 from tkinter import messagebox
 import hashlib
 from models import User, Session, create_tables
@@ -7,6 +8,7 @@ class LoginApp:
     def __init__(self, root, success_callback):
         create_tables()  # ORM DB setup
         self.root = root
+        self.root.configure(fg_color='#0A2647')
         self.root.title("Budget App Login")
         self.center_window(self.root, 300, 250)
         self.success_callback = success_callback
@@ -45,14 +47,14 @@ class LoginApp:
         window.geometry(f"{width}x{height}+{x}+{y}")
 
     def create_widgets(self):
-        tk.Label(self.root, text="Username:").pack(pady=5)
-        self.username_entry = tk.Entry(self.root)
+        ctk.CTkLabel(self.root, text="Username:").pack(pady=5)
+        self.username_entry = ctk.CTkEntry(self.root, placeholder_text="Username", fg_color='white', text_color='black', border_color='white')
         self.username_entry.pack(pady=5)
-        tk.Label(self.root, text="Password:").pack(pady=5)
-        self.password_entry = tk.Entry(self.root, show="*")
+        ctk.CTkLabel(self.root, text="Password:").pack(pady=5)
+        self.password_entry = ctk.CTkEntry(self.root, show="*", placeholder_text="Password", fg_color='white', text_color='black', border_color='white')
         self.password_entry.pack(pady=5)
-        tk.Button(self.root, text="Login", command=self.login).pack(pady=10)
-        tk.Button(self.root, text="Register", command=self.register).pack(pady=10)
+        ctk.CTkButton(self.root, text="Login", command=self.login, fg_color='#205295', hover_color='#144272').pack(pady=10)
+        ctk.CTkButton(self.root, text="Register", command=self.register, fg_color=('green'), hover_color='darkgreen').pack(pady=10)
 
     def hash_password(self, password):
         return hashlib.sha256(password.encode()).hexdigest()
