@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PIL import Image
 
+# icons
 growth_path = Image.open("icons/growth.png")
 budget_path = Image.open("icons/asset-management.png")
 
@@ -40,7 +41,7 @@ class MainApp:
         y = int((screen_height/2) - (window_height/2))
         main_window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-        # === Icon Row ===
+        # icon placement
         icon_frame = ctk.CTkFrame(main_window, fg_color="transparent")
         icon_frame.pack(pady=10)
 

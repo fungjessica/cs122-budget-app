@@ -1,4 +1,3 @@
-# transactions.py (updated)
 from models import Transaction, Session, User
 from datetime import datetime
 import pandas as pd
@@ -15,7 +14,7 @@ class TransactionApp:
         self.root = root
         self.root.title("Transactions")
         self.root.configure(fg_color='#0A2647')
-        self.center_window(self.root, 400, 400)
+        self.center_window(self.root, 500, 300)
         self.create_widgets()
     
     def center_window(self, window, width, height):
@@ -65,7 +64,7 @@ class TransactionApp:
         for month, amount in expenses:
             summary.setdefault(month, {'Income': 0, 'Expense': 0})['Expense'] = amount
 
-        # Display results
+        # Display results in bar chart 
         summary_window = ctk.CTkToplevel(self.root)
         summary_window.title("Monthly Summary")
 
@@ -99,29 +98,42 @@ class TransactionApp:
             y = int((screen_height / 2) - (height / 2))
             window.geometry(f"{width}x{height}+{x}+{y}")
 
-    # Keep original widget creation
     def create_widgets(self):
+        title_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        title_frame.pack(pady=(10, 5))
+        ctk.CTkLabel(title_frame, text="Transaction Manager", font=("Helvetica", 20, "bold")).pack()
+        ctk.CTkLabel(title_frame, text="Track your expenses and income below", font=("Helvetica", 14)).pack()
+
+        main_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        main_frame.pack(pady=10)
+
+        form_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        form_frame.grid(row=0, column=0, padx=10, sticky="n")
+
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame.grid(row=0, column=1, padx=10, sticky="n")
+
         fields = [
             ("Date:", 'date', 'YY-MM-DD'),
             ("Description:", 'description', 'What is it?'),
             ("Amount:", 'amount', '$'),
             ("Type:", 'type', 'Income/Expense')
         ]
-        
+
         self.entries = {}
         for i, (label_text, field, placeholder) in enumerate(fields):
-            ctk.CTkLabel(self.root, text=label_text).grid(row=i, column=0, padx=5, pady=5)
-            entry = ctk.CTkEntry(self.root, fg_color='white', 
-                text_color='black', border_color='white', placeholder_text=placeholder)
-            entry.grid(row=i, column=1, padx=5, pady=5)
+            ctk.CTkLabel(form_frame, text=label_text, font=("Helvetica", 14)).grid(row=i, column=0, padx=10, pady=8, sticky="e")
+            entry = ctk.CTkEntry(form_frame, fg_color='white',
+                text_color='black', border_color='white', corner_radius=10,
+                placeholder_text=placeholder)
+            entry.grid(row=i, column=1, padx=10, pady=8)
             self.entries[field] = entry
 
-        ctk.CTkButton(self.root, text="Add Entry", command=self.add_entry, fg_color='green', hover_color='darkgreen').grid(row=4, columnspan=2, pady=10)
-        ctk.CTkButton(self.root, text="View Entries", command=self.view_entries, fg_color='#205295', hover_color='#144272').grid(row=5, columnspan=2, pady=5)
-        ctk.CTkButton(self.root, text="Search Entries", command=self.search_entries, fg_color='#205295', hover_color='#144272').grid(row=6, columnspan=2, pady=5)
-        ctk.CTkButton(self.root, text="Monthly Summary", command=self.monthly_summary, fg_color='#205295', hover_color='#144272').grid(row=7, columnspan=2, pady=5)
+        ctk.CTkButton(button_frame, text="Add Entry", command=self.add_entry, fg_color='green', hover_color='darkgreen', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(0, 10))
+        ctk.CTkButton(button_frame, text="View Entries", command=self.view_entries, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=5)
+        ctk.CTkButton(button_frame, text="Search Entries", command=self.search_entries, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=5)
+        ctk.CTkButton(button_frame, text="Monthly Summary", command=self.monthly_summary, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(5, 0))
 
-    # Keep original view_entries UI
     def view_entries(self):
         view_window = ctk.CTkToplevel(self.root)
         view_window.title("View Entries")
@@ -136,7 +148,6 @@ class TransactionApp:
                 f"Amount: {transaction.amount} | Type: {transaction.type}\n"
             )
 
-    # Keep original search_entries UI
     def search_entries(self):
         search_window = ctk.CTkToplevel(self.root)
         search_window.title("Search Entries")

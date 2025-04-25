@@ -5,6 +5,7 @@ import hashlib
 from models import User, Session, create_tables
 from PIL import Image
 
+# icon paths
 user_path = Image.open("icons/user(1).png")
 password_path = Image.open("icons/padlock.png")
 
@@ -55,6 +56,7 @@ class LoginApp:
         ctk.CTkLabel(self.root, text="My PocketBook", font=("Helvetica", 20, "bold")).pack(pady=5)
         ctk.CTkLabel(self.root, text="Your BFF for all your budgeting needs!", font=("Helvetica", 18)).pack(pady=5)
 
+        # icon placement
         user_image = ctk.CTkImage(light_image=user_path, size=(30, 30))
 
         user_frame = ctk.CTkFrame(self.root, fg_color="transparent")
@@ -67,6 +69,7 @@ class LoginApp:
         self.username_entry = ctk.CTkEntry(user_frame, placeholder_text="Username", fg_color='white', text_color='black', border_color='white')
         self.username_entry.pack(side="left", padx=5)
 
+        # icon placement
         password_image = ctk.CTkImage(light_image=password_path, size=(33,33))
 
         password_frame = ctk.CTkFrame(self.root, fg_color="transparent")
