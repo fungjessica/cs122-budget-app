@@ -39,34 +39,52 @@ class BudgetingApp:
     def create_widgets(self):
         title_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         title_frame.pack(pady=(10, 5))
-        ctk.CTkLabel(title_frame, text="Budget Manager", font=("Helvetica", 20, "bold")).pack()
+        ctk.CTkLabel(title_frame, text="Budget Manager", font=("Helvetica", 22, "bold")).pack()
         ctk.CTkLabel(title_frame, text="Plan your expenses and track your budget", font=("Helvetica", 14)).pack()
 
         main_frame = ctk.CTkFrame(self.root, fg_color="transparent")
-        main_frame.pack(pady=10)
+        main_frame.pack(pady=10, padx=20, fill="both", expand=True)
 
-        # Salary Input
-        ctk.CTkLabel(main_frame, text="Enter your estimated monthly salary:", font=("Helvetica", 14)).pack(pady=5)
-        self.salary_entry = ctk.CTkEntry(main_frame, fg_color='white', text_color='black', placeholder_text="Salary")
-        self.salary_entry.pack(pady=5)
-        ctk.CTkButton(main_frame, text="Set Salary", command=self.set_salary, fg_color="#1D4ED8", font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=10)
+        self.top_area_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        self.top_area_frame.pack(pady=10, fill="both", expand=True)
 
-        # Category Selection
-        ctk.CTkLabel(main_frame, text="Select a category:", font=("Helvetica", 14)).pack(pady=5)
+        self.salary_frame = ctk.CTkFrame(self.top_area_frame, fg_color="#102C57", corner_radius=10)
+        self.salary_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        self.category_frame = ctk.CTkFrame(self.top_area_frame, fg_color="#102C57", corner_radius=10)
+        self.category_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+
+        self.top_area_frame.grid_columnconfigure(0, weight=1)
+        self.top_area_frame.grid_columnconfigure(1, weight=1)
+        self.top_area_frame.grid_rowconfigure(0, weight=1)
+
+        self.summary_area_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        self.summary_area_frame.pack(pady=10, fill="both", expand=True)
+
+        self.summary_frame = ctk.CTkFrame(self.summary_area_frame, fg_color="#102C57", corner_radius=10)
+        self.summary_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        self.summary_area_frame.grid_columnconfigure(0, weight=1)
+        self.summary_area_frame.grid_rowconfigure(0, weight=1)
+
+        ctk.CTkLabel(self.salary_frame, text="Enter your estimated monthly salary:", font=("Helvetica", 14)).pack(pady=(10, 5))
+        self.salary_entry = ctk.CTkEntry(self.salary_frame, fg_color='white', text_color='black', placeholder_text="Salary")
+        self.salary_entry.pack(pady=5, padx=20)
+        ctk.CTkButton(self.salary_frame, text="Set Salary", command=self.set_salary, fg_color="#1D4ED8", font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(10, 10))
+
+        ctk.CTkLabel(self.category_frame, text="Select a category:", font=("Helvetica", 14)).pack(pady=(10, 5))
         self.category_var = tk.StringVar()
-        self.category_dropdown = ttk.Combobox(main_frame, textvariable=self.category_var, values=self.categories, font=("Helvetica", 12))
-        self.category_dropdown.pack(pady=5)
+        self.category_dropdown = ttk.Combobox(self.category_frame, textvariable=self.category_var, values=self.categories, font=("Helvetica", 12))
+        self.category_dropdown.pack(pady=5, padx=20)
 
-        # Amount Entry
-        ctk.CTkLabel(main_frame, text="Enter amount spent:", font=("Helvetica", 14)).pack(pady=5)
-        self.amount_entry = ctk.CTkEntry(main_frame, fg_color='white', text_color='black', placeholder_text="Amount")
-        self.amount_entry.pack(pady=5)
-        ctk.CTkButton(main_frame, text="Add Spending", command=self.add_spending, fg_color="#1D4ED8", font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=10)
+        ctk.CTkLabel(self.category_frame, text="Enter amount spent:", font=("Helvetica", 14)).pack(pady=(10, 5))
+        self.amount_entry = ctk.CTkEntry(self.category_frame, fg_color='white', text_color='black', placeholder_text="Amount")
+        self.amount_entry.pack(pady=5, padx=20)
+        ctk.CTkButton(self.category_frame, text="Add Spending", command=self.add_spending, fg_color="#1D4ED8", font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(10, 10))
 
-        # Summary Section
-        ctk.CTkLabel(main_frame, text="Summary:", font=("Helvetica", 16, "bold")).pack(pady=5)
-        self.summary_text = tk.Text(main_frame, height=15, width=70, bg="#0A2647", fg="white", font=("Helvetica", 12))
-        self.summary_text.pack(pady=10)
+        ctk.CTkLabel(self.summary_frame, text="Summary", font=("Helvetica", 16, "bold")).pack(pady=(10, 0))
+        self.summary_text = ctk.CTkTextbox(self.summary_frame, font=("Helvetica", 12))
+        self.summary_text.pack(pady=10, padx=20, fill="both", expand=True)
 
     def set_salary(self):
         try:
@@ -109,12 +127,17 @@ class BudgetingApp:
         self.update_summary()
 
     def update_summary(self):
-        self.summary_text.delete(1.0, tk.END)
-        self.summary_text.insert(tk.END, f"Salary: ${self.salary:.2f}\n\n")
-        self.summary_text.insert(tk.END, "Category Summary:\n")
+        self.summary_text.delete("0.0", tk.END)
+
+        self.summary_text.insert(tk.END, "--- Budget Summary ---\n\n")
+        self.summary_text.insert(tk.END, f"Monthly Salary: ${self.salary:.2f}\n\n")
+        self.summary_text.insert(tk.END, "Category Breakdown:\n\n")
 
         for cat in self.categories:
             recommended = self.recommended_budget.get(cat, 0)
             actual = self.actual_spending.get(cat, 0)
             status = "✅" if actual <= recommended else "⚠️ Over Budget!"
-            self.summary_text.insert(tk.END, f"{cat}: Recommended ${recommended:.2f} | Actual ${actual:.2f} {status}\n")
+            line = f"{cat:<15}     |     Recommended: ${recommended:>7.2f}     |     Actual: ${actual:>7.2f} {status}\n"
+            self.summary_text.insert(tk.END, line)
+
+        self.summary_text.insert(tk.END, "\n" + "-"*60 + "\n")

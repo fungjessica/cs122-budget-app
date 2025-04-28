@@ -90,14 +90,6 @@ class TransactionApp:
         canvas.draw()
         canvas.get_tk_widget().pack(pady=10)
 
-        # Keep original center_window method
-        def center_window(self, window, width, height):
-            screen_width = window.winfo_screenwidth()
-            screen_height = window.winfo_screenheight()
-            x = int((screen_width / 2) - (width / 2))
-            y = int((screen_height / 2) - (height / 2))
-            window.geometry(f"{width}x{height}+{x}+{y}")
-
     def create_widgets(self):
         title_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         title_frame.pack(pady=(10, 5))
@@ -123,11 +115,25 @@ class TransactionApp:
         self.entries = {}
         for i, (label_text, field, placeholder) in enumerate(fields):
             ctk.CTkLabel(form_frame, text=label_text, font=("Helvetica", 14)).grid(row=i, column=0, padx=10, pady=8, sticky="e")
-            entry = ctk.CTkEntry(form_frame, fg_color='white',
-                text_color='black', border_color='white', corner_radius=10,
-                placeholder_text=placeholder)
-            entry.grid(row=i, column=1, padx=10, pady=8)
-            self.entries[field] = entry
+            if field == 'type':
+                type_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
+                type_frame.grid(row=i, column=1, padx=10, pady=8, sticky="w")
+
+                self.type_var = tk.StringVar()
+
+                income_radio = ctk.CTkRadioButton(type_frame, text="Income", variable=self.type_var, value="Income")
+                income_radio.pack(side="left", padx=5)
+
+                expense_radio = ctk.CTkRadioButton(type_frame, text="Expense", variable=self.type_var, value="Expense")
+                expense_radio.pack(side="left", padx=5)
+
+                self.entries[field] = self.type_var
+            else:
+                entry = ctk.CTkEntry(form_frame, fg_color='white',
+                    text_color='black', border_color='white', corner_radius=10,
+                    placeholder_text=placeholder)
+                entry.grid(row=i, column=1, padx=10, pady=8)
+                self.entries[field] = entry
 
         ctk.CTkButton(button_frame, text="Add Entry", command=self.add_entry, fg_color='green', hover_color='darkgreen', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(0, 10))
         ctk.CTkButton(button_frame, text="View Entries", command=self.view_entries, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=5)
