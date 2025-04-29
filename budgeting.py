@@ -94,8 +94,25 @@ class BudgetingApp:
         try:
             self.salary = float(self.salary_entry.get())
             self.calculate_recommended_budget()
-            messagebox.showinfo("Success", "Salary set and budget calculated!")
+
+            session = Session()
+            user = session.query(User).filter_by(username=self.username).first()
+
+            for cat, amount in self.recommended_budget.items():
+                budget_entry = session.query(Budget).filter_by(user_id=user.id, category=cat, period="Monthly").first()
+                if not budget_entry:
+                    budget_entry = Budget(user_id=user.id, category=cat, period="Monthly", budget=amount, used=0)
+                    session.add(budget_entry)
+                else:
+                    budget_entry.budget = amount  # update recommended amount
+
+            session.commit()
+            session.close()
+
+            messagebox.showinfo("Success", "Salary set and budget saved!")
+            self.load_budget_data()
             self.update_summary()
+
         except ValueError:
             messagebox.showerror("Error", "Please enter a valid number for salary.")
 
@@ -123,12 +140,31 @@ class BudgetingApp:
             messagebox.showerror("Error", "Please enter a valid number for amount.")
             return
 
-        if category in self.actual_spending:
-            self.actual_spending[category] += amount
-        else:
-            self.actual_spending[category] = amount
+        session = Session()
+        user = session.query(User).filter_by(username=self.username).first()
+        budget_entry = session.query(Budget).filter_by(user_id=user.id, category=category, period="Monthly").first()
 
+        if budget_entry:
+            budget_entry.used += amount
+        else:
+            # If no budget set yet, create a new one
+            budget_entry = Budget(user_id=user.id, category=category, period="Monthly", budget=0, used=amount)
+            session.add(budget_entry)
+
+        session.commit()
+        session.close()
+
+        self.load_budget_data()
         self.update_summary()
+        
+    def load_budget_data(self):
+        session = Session()
+        user = session.query(User).filter_by(username=self.username).first()
+        budgets = session.query(Budget).filter_by(user_id=user.id, period="Monthly").all()
+
+        self.recommended_budget = {b.category: b.budget for b in budgets}
+        self.actual_spending = {b.category: b.used for b in budgets}
+        session.close()
 
     def update_summary(self):
         self.summary_text.delete("0.0", tk.END)
