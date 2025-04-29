@@ -4,6 +4,8 @@ from tkinter import ttk, messagebox
 import customtkinter as ctk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.pyplot as plt
+
 
 class BudgetingApp:
     def __init__(self, root, username):
@@ -25,7 +27,7 @@ class BudgetingApp:
         ctk.set_default_color_theme("blue")
 
         self.root.configure(fg_color="#0A2647")
-        self.center_window(self.root, 600, 700)
+        self.center_window(self.root, 1000, 700)
 
         self.create_widgets()
 
@@ -66,6 +68,8 @@ class BudgetingApp:
 
         self.summary_area_frame.grid_columnconfigure(0, weight=1)
         self.summary_area_frame.grid_rowconfigure(0, weight=1)
+        self.summary_area_frame.grid_columnconfigure(1, weight=1)
+
 
         ctk.CTkLabel(self.salary_frame, text="Enter your estimated monthly salary:", font=("Helvetica", 14)).pack(pady=(10, 5))
         self.salary_entry = ctk.CTkEntry(self.salary_frame, fg_color='white', text_color='black', placeholder_text="Salary")
@@ -135,9 +139,47 @@ class BudgetingApp:
 
         for cat in self.categories:
             recommended = self.recommended_budget.get(cat, 0)
-            actual = self.actual_spending.get(cat, 0)
-            status = "✅" if actual <= recommended else "⚠️ Over Budget!"
-            line = f"{cat:<15}     |     Recommended: ${recommended:>7.2f}     |     Actual: ${actual:>7.2f} {status}\n"
+            line = f"{cat:<15}     |     Recommended: ${recommended:>7.2f}\n"
             self.summary_text.insert(tk.END, line)
 
         self.summary_text.insert(tk.END, "\n" + "-"*60 + "\n")
+        
+        # Draw the pie chart after updating the summary
+        self.draw_pie_chart()
+        
+    def draw_pie_chart(self):
+        for widget in self.summary_area_frame.winfo_children():
+            if isinstance(widget, FigureCanvasTkAgg):
+                widget.get_tk_widget().destroy()
+
+        remaining_budget = []
+        labels = []
+        colors = [
+            "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0",
+            "#9966FF", "#FF9F40", "#66FF66", "#FF6666"
+        ]
+
+        for cat in self.categories:
+                recommended = self.recommended_budget.get(cat, 0)
+                actual = self.actual_spending.get(cat, 0)
+                remaining = max(recommended - actual, 0)
+                if remaining > 0:
+                    remaining_budget.append(remaining)
+                    labels.append(cat)
+
+        if not remaining_budget:
+            return  # nothing to plot yet
+
+        fig = Figure(figsize=(4, 4))
+        ax = fig.add_subplot(111)
+        wedges, texts, autotexts = ax.pie(
+            remaining_budget,
+            labels=labels,
+            autopct="%1.1f%%",
+            startangle=140,
+            colors=colors
+        )
+        ax.set_title("Remaining Budget by Category", fontsize=14)
+
+        chart = FigureCanvasTkAgg(fig, self.summary_area_frame)
+        chart.get_tk_widget().grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
