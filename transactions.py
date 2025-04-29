@@ -97,6 +97,16 @@ class TransactionApp:
         ctk.CTkLabel(title_frame, text="Transaction Manager", font=("Helvetica", 20, "bold")).pack()
         ctk.CTkLabel(title_frame, text="Track your expenses and income below", font=("Helvetica", 14)).pack()
 
+        search_frame = ctk.CTkFrame(self.root, fg_color="transparent")
+        search_frame.pack(pady=10)
+
+        ctk.CTkLabel(search_frame, text="Search Transactions:", font=("Helvetica", 14)).pack(side="left", padx=10)
+        self.search_entry = ctk.CTkEntry(search_frame, fg_color='white', text_color='black', border_color='white', placeholder_text='Search here')
+        self.search_entry.bind("<KeyRelease>", self.check_search_input)
+        self.search_entry.pack(side="left", padx=10)
+        self.search_button = ctk.CTkButton(search_frame, text="Search", command=self.search_entries, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10, state=tk.DISABLED)
+        self.search_button.pack(side="left", padx=10)
+
         main_frame = ctk.CTkFrame(self.root, fg_color="transparent")
         main_frame.pack(pady=10)
 
@@ -146,7 +156,6 @@ class TransactionApp:
 
         ctk.CTkButton(button_frame, text="Add Entry", command=self.add_entry, fg_color='green', hover_color='darkgreen', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(0, 10))
         ctk.CTkButton(button_frame, text="View Entries", command=self.view_entries, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=5)
-        ctk.CTkButton(button_frame, text="Search Entries", command=self.search_entries, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=5)
         ctk.CTkButton(button_frame, text="Monthly Summary", command=self.monthly_summary, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(5, 0))
 
     def view_entries(self):
@@ -159,31 +168,23 @@ class TransactionApp:
             )
 
     def search_entries(self):
-        search_window = ctk.CTkToplevel(self.root)
-        search_window.title("Search Entries")
-        search_window.configure(fg_color='#0A2647')
-        ctk.CTkLabel(search_window, text="Search term:").pack(padx=5, pady=5)
-        search_entry = ctk.CTkEntry(search_window, fg_color='white', 
-            text_color='black', border_color='white', placeholder_text='Entry')
-        search_entry.pack(padx=5, pady=5)
+        term = self.search_entry.get().lower()
+        results = self.session.query(Transaction).filter(
+            (Transaction.description.ilike(f"%{term}%")) |
+            (Transaction.date.ilike(f"%{term}%")) |
+            (Transaction.type.ilike(f"%{term}%"))
+        ).all()
+
+        self.transaction_text.delete("0.0", tk.END)
         
-        def perform_search():
-            term = search_entry.get().lower()
-            results = self.session.query(Transaction).filter(
-                (Transaction.description.ilike(f"%{term}%")) |
-                (Transaction.date.ilike(f"%{term}%")) |
-                (Transaction.type.ilike(f"%{term}%"))
-            ).all()
-                
-            result_window = ctk.CTkToplevel(search_window)
-            result_window.title("Search Results")
-            text = tk.Text(result_window)
-            text.pack()
-                
-            for transaction in results:
-                text.insert(tk.END,
-                    f"Date: {transaction.date} | Description: {transaction.description} | "
-                    f"Amount: {transaction.amount} | Type: {transaction.type}\n"
-                )
-            
-        ctk.CTkButton(search_window, text="Search", command=perform_search).pack(pady=5)
+        for transaction in results:
+            self.transaction_text.insert(tk.END,
+                f"Date: {transaction.date}   |   Description: {transaction.description}   |   "
+                f"Amount: {transaction.amount}   |   Type: {transaction.type}\n"
+            )
+
+    def check_search_input(self, event=None):
+        if self.search_entry.get().strip(): 
+            self.search_button.configure(state=tk.NORMAL)  
+        else:
+            self.search_button.configure(state=tk.DISABLED)  
