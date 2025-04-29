@@ -14,7 +14,7 @@ class TransactionApp:
         self.root = root
         self.root.title("Transactions")
         self.root.configure(fg_color='#0A2647')
-        self.center_window(self.root, 500, 300)
+        self.center_window(self.root, 600, 600)
         self.create_widgets()
     
     def center_window(self, window, width, height):
@@ -35,6 +35,7 @@ class TransactionApp:
             )
             self.session.add(new_transaction)
             self.session.commit()
+            self.view_entries()
             messagebox.showinfo("Success", "Entry saved successfully!")
         except Exception as e:
             self.session.rollback()
@@ -105,6 +106,14 @@ class TransactionApp:
         button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         button_frame.grid(row=0, column=1, padx=10, sticky="n")
 
+        self.viewer_frame = ctk.CTkFrame(self.root, fg_color="#102C57", corner_radius=10)
+        self.viewer_frame.pack(padx=10)
+
+        ctk.CTkLabel(self.viewer_frame, text="Your Transactions", font=("Helvetica", 16, "bold")).pack(pady=(10, 0))
+
+        self.transaction_text = ctk.CTkTextbox(self.viewer_frame, font=("Helvetica", 12), width=450, height=200)
+        self.transaction_text.pack(pady=10, padx=10)
+
         fields = [
             ("Date:", 'date', 'YY-MM-DD'),
             ("Description:", 'description', 'What is it?'),
@@ -141,17 +150,12 @@ class TransactionApp:
         ctk.CTkButton(button_frame, text="Monthly Summary", command=self.monthly_summary, fg_color='#205295', hover_color='#144272', font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(5, 0))
 
     def view_entries(self):
-        view_window = ctk.CTkToplevel(self.root)
-        view_window.title("View Entries")
-        view_window.configure(fg_color='#0A2647')
-        text = tk.Text(view_window)
-        text.pack()
-        
+        self.transaction_text.delete("0.0", tk.END)
         transactions = self.session.query(Transaction).filter_by(user=self.user).all()
         for transaction in transactions:
-            text.insert(ctk.END,
-                f"Date: {transaction.date} | Description: {transaction.description} | "
-                f"Amount: {transaction.amount} | Type: {transaction.type}\n"
+            self.transaction_text.insert(tk.END,
+                f"Date: {transaction.date}   |   Description: {transaction.description}   |   "
+                f"Amount: {transaction.amount}   |   Type: {transaction.type}\n"
             )
 
     def search_entries(self):
