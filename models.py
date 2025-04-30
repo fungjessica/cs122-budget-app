@@ -12,6 +12,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True)
     password_hash = Column(String)
+    salary = Column(Float, default=0.0)
     transactions = relationship('Transaction', backref='user')
     budgets = relationship('Budget', backref='user')
 

@@ -30,6 +30,10 @@ class BudgetingApp:
         self.center_window(self.root, 1000, 700)
 
         self.create_widgets()
+        self.load_user_salary()
+        self.load_budget_data()
+        self.update_summary()
+
 
     def center_window(self, window, width, height):
         screen_width = window.winfo_screenwidth()
@@ -85,6 +89,16 @@ class BudgetingApp:
         self.amount_entry = ctk.CTkEntry(self.category_frame, fg_color='white', text_color='black', placeholder_text="Amount")
         self.amount_entry.pack(pady=5, padx=20)
         ctk.CTkButton(self.category_frame, text="Add Spending", command=self.add_spending, fg_color="#1D4ED8", font=("Helvetica", 14, "bold"), corner_radius=10).pack(pady=(10, 10))
+        
+        ctk.CTkButton(
+            self.category_frame,
+            text="Reset Spending",
+            command=self.reset_all_spending,
+            fg_color="#DC2626",  # Red reset button
+            font=("Helvetica", 14, "bold"),
+            corner_radius=10
+        ).pack(pady=(10, 10))
+
 
         ctk.CTkLabel(self.summary_frame, text="Summary", font=("Helvetica", 16, "bold")).pack(pady=(10, 0))
         self.summary_text = ctk.CTkTextbox(self.summary_frame, font=("Helvetica", 12))
@@ -93,6 +107,12 @@ class BudgetingApp:
     def set_salary(self):
         try:
             self.salary = float(self.salary_entry.get())
+            # Save salary to DB
+            session = Session()
+            user = session.query(User).filter_by(username=self.username).first()
+            user.salary = self.salary
+            session.commit()
+            
             self.calculate_recommended_budget()
 
             session = Session()
@@ -115,6 +135,16 @@ class BudgetingApp:
 
         except ValueError:
             messagebox.showerror("Error", "Please enter a valid number for salary.")
+            
+    def load_user_salary(self):
+        session = Session()
+        user = session.query(User).filter_by(username=self.username).first()
+        self.salary = user.salary or 0.0
+        session.close()
+
+        # Show salary in entry box
+        self.salary_entry.delete(0, tk.END)
+        self.salary_entry.insert(0, str(self.salary))
 
     def calculate_recommended_budget(self):
         self.recommended_budget = {
@@ -125,7 +155,6 @@ class BudgetingApp:
             "Insurance": self.salary * 0.10,
             "Entertainment": self.salary * 0.10,
             "Savings": self.salary * 0.15,
-            "Miscellaneous": self.salary * 0.00
         }
 
     def add_spending(self):
@@ -156,6 +185,27 @@ class BudgetingApp:
 
         self.load_budget_data()
         self.update_summary()
+        
+    def reset_all_spending(self):  
+        session = Session()
+        user = session.query(User).filter_by(username=self.username).first()
+        budgets = session.query(Budget).filter_by(user_id=user.id, period="Monthly").all()
+
+        confirm = messagebox.askyesno("Confirm Reset", "Are you sure you want to reset all spending to $0?")
+        if not confirm:
+            session.close()
+            return
+
+        for b in budgets:
+            b.used = 0
+
+        session.commit()
+        session.close()
+
+        messagebox.showinfo("Reset Complete", "All spending has been reset to $0.")
+        self.load_budget_data()
+        self.update_summary()
+
         
     def load_budget_data(self):
         session = Session()
@@ -196,15 +246,13 @@ class BudgetingApp:
         ]
 
         for cat in self.categories:
-                recommended = self.recommended_budget.get(cat, 0)
-                actual = self.actual_spending.get(cat, 0)
-                remaining = max(recommended - actual, 0)
-                if remaining > 0:
-                    remaining_budget.append(remaining)
-                    labels.append(cat)
-
-        if not remaining_budget:
-            return  # nothing to plot yet
+            recommended = self.recommended_budget.get(cat, 0)
+            actual = self.actual_spending.get(cat, 0)
+            remaining = max(recommended - actual, 0)
+            
+            # Always show all categories
+            remaining_budget.append(remaining)
+            labels.append(cat)
 
         fig = Figure(figsize=(4, 4))
         ax = fig.add_subplot(111)
