@@ -24,7 +24,7 @@ The following Python libraries are required:
 
 > Install all dependencies using:
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ---
@@ -35,12 +35,12 @@ pip install -r requirements.txt
 
 2. **Install dependencies** (if not already installed):
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 3. **Run the application**:
 ```bash
-python main.py
+python3 main.py
 ```
 
 4. The application will launch in a window. Use the sign-up page to create a new account, or log in if you already have one.
