@@ -71,3 +71,8 @@ python3 main.py
 - No handling for recurring income/expenses.
 
 ---
+
+## If you get this error: 
+ModuleNotFoundError: No module named 'distutils'
+
+`python3 -m pip install setuptools`
